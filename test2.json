@@ -1,0 +1,949 @@
+{
+  "directory": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith",
+  "files": [
+    "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Coin.sol",
+    "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Factory.sol",
+    "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/InterestModel.sol",
+    "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Lender.sol",
+    "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Lens.sol",
+    "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Vault.sol"
+  ],
+  "contracts": [
+    {
+      "name": "Coin",
+      "kind": "contract",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Coin.sol",
+      "functions": [
+        {
+          "name": "burn",
+          "signature": "burn(uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 19
+        },
+        {
+          "name": "mint",
+          "signature": "mint(address,uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 14
+        },
+        {
+          "name": "DOMAIN_SEPARATOR",
+          "signature": "DOMAIN_SEPARATOR() returns (bytes32)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 162
+        },
+        {
+          "name": "approve",
+          "signature": "approve(address,uint256) returns (bool)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 68
+        },
+        {
+          "name": "constructor",
+          "signature": "constructor(address,string,string)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 10
+        },
+        {
+          "name": "permit",
+          "signature": "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 116
+        },
+        {
+          "name": "transfer",
+          "signature": "transfer(address,uint256) returns (bool)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 76
+        },
+        {
+          "name": "transferFrom",
+          "signature": "transferFrom(address,address,uint256) returns (bool)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 90
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "CoinDeployer",
+      "kind": "library",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Factory.sol",
+      "functions": [
+        {
+          "name": "deployCoin",
+          "signature": "deployCoin(address,uint256,bytes)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 53
+        },
+        {
+          "name": "getAddress",
+          "signature": "getAddress(address,uint256) returns (address)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 49
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "Factory",
+      "kind": "contract",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Factory.sol",
+      "functions": [
+        {
+          "name": "acceptOperator",
+          "signature": "acceptOperator()",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 92
+        },
+        {
+          "name": "deploy",
+          "signature": "deploy(Factory.DeployParams) returns (address, address, address)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 149
+        },
+        {
+          "name": "deploymentsLength",
+          "signature": "deploymentsLength() returns (uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 83
+        },
+        {
+          "name": "getFeeOf",
+          "signature": "getFeeOf(address) returns (uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 116
+        },
+        {
+          "name": "pullReserves",
+          "signature": "pullReserves(address)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 122
+        },
+        {
+          "name": "setCustomFeeBps",
+          "signature": "setCustomFeeBps(address,uint256) onlyOperator",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperator"
+          ],
+          "line": 110
+        },
+        {
+          "name": "setFeeBps",
+          "signature": "setFeeBps(uint256) onlyOperator",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperator"
+          ],
+          "line": 104
+        },
+        {
+          "name": "setFeeRecipient",
+          "signature": "setFeeRecipient(address) onlyOperator",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperator"
+          ],
+          "line": 99
+        },
+        {
+          "name": "setPendingOperator",
+          "signature": "setPendingOperator(address) onlyOperator",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperator"
+          ],
+          "line": 87
+        },
+        {
+          "name": "constructor",
+          "signature": "constructor(address,uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 72
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "InterestModelDeployer",
+      "kind": "library",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Factory.sol",
+      "functions": [
+        {
+          "name": "deploy",
+          "signature": "deploy() returns (address)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 11
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "LenderDeployer",
+      "kind": "library",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Factory.sol",
+      "functions": [
+        {
+          "name": "deployLender",
+          "signature": "deployLender(address,uint256,bytes)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 25
+        },
+        {
+          "name": "getAddress",
+          "signature": "getAddress(address,uint256) returns (address)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 21
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "VaultDeployer",
+      "kind": "library",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Factory.sol",
+      "functions": [
+        {
+          "name": "deployVault",
+          "signature": "deployVault(address,uint256,bytes)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 39
+        },
+        {
+          "name": "getAddress",
+          "signature": "getAddress(address,uint256) returns (address)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 35
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "InterestModel",
+      "kind": "contract",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/InterestModel.sol",
+      "functions": [
+        {
+          "name": "calculateInterest",
+          "signature": "calculateInterest(uint256,uint256,uint256,uint256,uint256,uint256,uint256) returns (uint256, uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 20
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "IChainlinkFeed",
+      "kind": "interface",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Lender.sol",
+      "functions": [
+        {
+          "name": "decimals",
+          "signature": "decimals() returns (uint8)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 13
+        },
+        {
+          "name": "latestRoundData",
+          "signature": "latestRoundData() returns (uint80, int256, uint256, uint256, uint80)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 14
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "IFactory",
+      "kind": "interface",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Lender.sol",
+      "functions": [
+        {
+          "name": "getFeeOf",
+          "signature": "getFeeOf(address) returns (uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 24
+        },
+        {
+          "name": "minDebtFloor",
+          "signature": "minDebtFloor() returns (uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 25
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "Lender",
+      "kind": "contract",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Lender.sol",
+      "functions": [
+        {
+          "name": "acceptOperator",
+          "signature": "acceptOperator()",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 959
+        },
+        {
+          "name": "adjust",
+          "signature": "adjust(address,int256,int256,bool)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 325
+        },
+        {
+          "name": "buy",
+          "signature": "buy(uint256,uint256) beforeDeadline returns (uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "beforeDeadline"
+          ],
+          "line": 521
+        },
+        {
+          "name": "delegate",
+          "signature": "delegate(address,bool)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 333
+        },
+        {
+          "name": "enableImmutabilityNow",
+          "signature": "enableImmutabilityNow() onlyOperator beforeDeadline",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperator",
+            "beforeDeadline"
+          ],
+          "line": 970
+        },
+        {
+          "name": "getFeedPrice",
+          "signature": "getFeedPrice() returns (uint256, uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 748
+        },
+        {
+          "name": "getPendingInterest",
+          "signature": "getPendingInterest() returns (uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 881
+        },
+        {
+          "name": "liquidate",
+          "signature": "liquidate(address,uint256,uint256) returns (uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 368
+        },
+        {
+          "name": "pullGlobalReserves",
+          "signature": "pullGlobalReserves(address)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 983
+        },
+        {
+          "name": "pullLocalReserves",
+          "signature": "pullLocalReserves() onlyOperator",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperator"
+          ],
+          "line": 975
+        },
+        {
+          "name": "reapprovePsmVault",
+          "signature": "reapprovePsmVault() beforeDeadline",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "beforeDeadline"
+          ],
+          "line": 545
+        },
+        {
+          "name": "redeem",
+          "signature": "redeem(uint256,uint256) returns (uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 465
+        },
+        {
+          "name": "sell",
+          "signature": "sell(uint256,uint256) returns (uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 499
+        },
+        {
+          "name": "setHalfLife",
+          "signature": "setHalfLife(uint64) onlyOperatorOrManager beforeDeadline",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperatorOrManager",
+            "beforeDeadline"
+          ],
+          "line": 918
+        },
+        {
+          "name": "setLocalReserveFeeBps",
+          "signature": "setLocalReserveFeeBps(uint256) onlyOperator",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperator"
+          ],
+          "line": 947
+        },
+        {
+          "name": "setManager",
+          "signature": "setManager(address) onlyOperatorOrManager",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperatorOrManager"
+          ],
+          "line": 965
+        },
+        {
+          "name": "setMaxBorrowDeltaBps",
+          "signature": "setMaxBorrowDeltaBps(uint16) onlyOperatorOrManager beforeDeadline",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperatorOrManager",
+            "beforeDeadline"
+          ],
+          "line": 941
+        },
+        {
+          "name": "setPendingOperator",
+          "signature": "setPendingOperator(address) onlyOperator",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperator"
+          ],
+          "line": 954
+        },
+        {
+          "name": "setRedeemFeeBps",
+          "signature": "setRedeemFeeBps(uint16) onlyOperatorOrManager beforeDeadline",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperatorOrManager",
+            "beforeDeadline"
+          ],
+          "line": 934
+        },
+        {
+          "name": "setTargetFreeDebtRatio",
+          "signature": "setTargetFreeDebtRatio(uint16,uint16) onlyOperatorOrManager beforeDeadline",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [
+            "onlyOperatorOrManager",
+            "beforeDeadline"
+          ],
+          "line": 925
+        },
+        {
+          "name": "writeOff",
+          "signature": "writeOff(address,address) returns (bool)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 421
+        },
+        {
+          "name": "accrueInterest",
+          "signature": "accrueInterest()",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 196
+        },
+        {
+          "name": "adjust",
+          "signature": "adjust(address,int256,int256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 241
+        },
+        {
+          "name": "collateralToInternal",
+          "signature": "collateralToInternal(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 855
+        },
+        {
+          "name": "constructor",
+          "signature": "constructor(Lender.LenderParams)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 124
+        },
+        {
+          "name": "getBuyAmountOut",
+          "signature": "getBuyAmountOut(uint256) returns (uint256, uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 816
+        },
+        {
+          "name": "getBuyFeeBps",
+          "signature": "getBuyFeeBps() returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 790
+        },
+        {
+          "name": "getCollateralPrice",
+          "signature": "getCollateralPrice() returns (uint256, bool, bool)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 715
+        },
+        {
+          "name": "getDebtOf",
+          "signature": "getDebtOf(address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 703
+        },
+        {
+          "name": "getFreeDebtRatio",
+          "signature": "getFreeDebtRatio() returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 698
+        },
+        {
+          "name": "getRedeemAmountOut",
+          "signature": "getRedeemAmountOut(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 765
+        },
+        {
+          "name": "getSellAmountOut",
+          "signature": "getSellAmountOut(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 774
+        },
+        {
+          "name": "internalToCollateral",
+          "signature": "internalToCollateral(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 868
+        },
+        {
+          "name": "setRedemptionStatus",
+          "signature": "setRedemptionStatus(address,bool)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 338
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "Lens",
+      "kind": "contract",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Lens.sol",
+      "functions": [
+        {
+          "name": "getCollateralOf",
+          "signature": "getCollateralOf(Lender,address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 11
+        },
+        {
+          "name": "getDebtOf",
+          "signature": "getDebtOf(Lender,address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 43
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "ILender",
+      "kind": "interface",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Vault.sol",
+      "functions": [
+        {
+          "name": "accrueInterest",
+          "signature": "accrueInterest()",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 7
+        },
+        {
+          "name": "coin",
+          "signature": "coin() returns (ERC20)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 8
+        },
+        {
+          "name": "getPendingInterest",
+          "signature": "getPendingInterest() returns (uint256)",
+          "visibility": "external",
+          "mutability": "",
+          "modifiers": [],
+          "line": 9
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    },
+    {
+      "name": "Vault",
+      "kind": "contract",
+      "file": "/home/shinobi/Desktop/web3/hunting/2025-12-Monolith/2025-12-monolith-stablecoin-factory-Kode-n-Rolla/Monolith/src/Vault.sol",
+      "functions": [
+        {
+          "name": "DOMAIN_SEPARATOR",
+          "signature": "DOMAIN_SEPARATOR() returns (bytes32)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 162
+        },
+        {
+          "name": "approve",
+          "signature": "approve(address,uint256) returns (bool)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 68
+        },
+        {
+          "name": "constructor",
+          "signature": "constructor(string,string,address)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 22
+        },
+        {
+          "name": "convertToAssets",
+          "signature": "convertToAssets(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 130
+        },
+        {
+          "name": "convertToShares",
+          "signature": "convertToShares(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 124
+        },
+        {
+          "name": "deposit",
+          "signature": "deposit(uint256,address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 46
+        },
+        {
+          "name": "deposit",
+          "signature": "deposit(uint256,address) accrueInterest returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [
+            "accrueInterest"
+          ],
+          "line": 47
+        },
+        {
+          "name": "maxDeposit",
+          "signature": "maxDeposit(address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 160
+        },
+        {
+          "name": "maxMint",
+          "signature": "maxMint(address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 164
+        },
+        {
+          "name": "maxRedeem",
+          "signature": "maxRedeem(address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 172
+        },
+        {
+          "name": "maxWithdraw",
+          "signature": "maxWithdraw(address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 168
+        },
+        {
+          "name": "mint",
+          "signature": "mint(uint256,address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 60
+        },
+        {
+          "name": "mint",
+          "signature": "mint(uint256,address) accrueInterest returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [
+            "accrueInterest"
+          ],
+          "line": 75
+        },
+        {
+          "name": "permit",
+          "signature": "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 116
+        },
+        {
+          "name": "previewDeposit",
+          "signature": "previewDeposit(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 136
+        },
+        {
+          "name": "previewDeposit",
+          "signature": "previewDeposit(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 125
+        },
+        {
+          "name": "previewMint",
+          "signature": "previewMint(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 140
+        },
+        {
+          "name": "previewMint",
+          "signature": "previewMint(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 139
+        },
+        {
+          "name": "previewRedeem",
+          "signature": "previewRedeem(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 152
+        },
+        {
+          "name": "previewWithdraw",
+          "signature": "previewWithdraw(uint256) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 146
+        },
+        {
+          "name": "redeem",
+          "signature": "redeem(uint256,address,address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 95
+        },
+        {
+          "name": "redeem",
+          "signature": "redeem(uint256,address,address) accrueInterest returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [
+            "accrueInterest"
+          ],
+          "line": 114
+        },
+        {
+          "name": "totalAssets",
+          "signature": "totalAssets() returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 122
+        },
+        {
+          "name": "totalAssets",
+          "signature": "totalAssets() returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 39
+        },
+        {
+          "name": "transfer",
+          "signature": "transfer(address,uint256) returns (bool)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 76
+        },
+        {
+          "name": "transferFrom",
+          "signature": "transferFrom(address,address,uint256) returns (bool)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 90
+        },
+        {
+          "name": "withdraw",
+          "signature": "withdraw(uint256,address,address) returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [],
+          "line": 73
+        },
+        {
+          "name": "withdraw",
+          "signature": "withdraw(uint256,address,address) accrueInterest returns (uint256)",
+          "visibility": "public",
+          "mutability": "",
+          "modifiers": [
+            "accrueInterest"
+          ],
+          "line": 101
+        }
+      ],
+      "has_receive": false,
+      "has_fallback": false
+    }
+  ]
+}

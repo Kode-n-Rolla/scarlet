@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: scarlet
+Version: 0.0.1
+Summary: SCARLET - Solidity Contract Analyzer & Research Layer for Execution & Transfer CLI Tool
+Requires-Python: >=3.10
+Requires-Dist: typer>=0.12
+Requires-Dist: rich>=13.7
+Requires-Dist: python-dotenv>=1.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: ruff>=0.6; extra == "dev"
+Requires-Dist: slither-analyzer>=0.10.0; extra == "dev"

@@ -1,0 +1,22 @@
+[project]
+name = "scarlet"
+version = "0.0.1"
+description = "SCARLET - Solidity Contract Analyzer & Research Layer for Execution & Transfer CLI Tool"
+requires-python = ">=3.10"
+dependencies = [
+  "typer>=0.12",
+  "rich>=13.7",
+  "python-dotenv>=1.0",
+]
+
+[project.scripts]
+scarlet = "scarlet.cli:main"
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6", "slither-analyzer>=0.10.0"]
