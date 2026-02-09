@@ -17,6 +17,9 @@ class SlitherFunctionInfo:
     mutability: str
     modifiers: list[str]
     line: int
+    src_start: int = 0
+    src_len: int = 0
+    src_file: str = ""  # file where function is defined (best-effort)
 
 
 @dataclass(frozen=True)
@@ -40,6 +43,27 @@ def _fn_line(fn) -> int:
             pass
     return 1
 
+def _fn_src_info(fn) -> tuple[int, int, str]:
+    sm = getattr(fn, "source_mapping", None)
+    if not sm:
+        return (0, 0, "")
+    start = int(getattr(sm, "start", 0) or 0)
+    length = int(getattr(sm, "length", 0) or 0)
+
+    file_path = (
+        getattr(sm, "filename_absolute", None)
+        or getattr(sm, "filename", None)
+        or getattr(sm, "filename_short", None)
+        or ""
+    )
+    try:
+        if hasattr(file_path, "absolute"):
+            file_path = file_path.absolute
+        file_path = str(Path(fspath(file_path)).expanduser().resolve()) if file_path else ""
+    except Exception:
+        file_path = ""
+
+    return (start, length, file_path)
 
 def build_index_with_slither(entry_path: Path) -> list[SlitherContractInfo]:
     """
@@ -112,6 +136,8 @@ def build_index_with_slither(entry_path: Path) -> list[SlitherContractInfo]:
             if rets:
                 signature += f" returns ({rets})"
 
+            start, length, fn_file = _fn_src_info(f)
+
             funcs.append(
                 SlitherFunctionInfo(
                     name=getattr(f, "name", "") or sig,
@@ -120,6 +146,9 @@ def build_index_with_slither(entry_path: Path) -> list[SlitherContractInfo]:
                     mutability=mut,
                     modifiers=mods,
                     line=_fn_line(f),
+                    src_start=start,
+                    src_len=length,
+                    src_file=fn_file,
                 )
             )
 

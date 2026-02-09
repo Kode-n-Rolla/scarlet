@@ -19,12 +19,14 @@ from typing import Optional
 import typer
 
 from .slither_index import build_index_with_slither
-from .indexer import IndexReport, ContractInfo, FunctionInfo
+from .indexer import IndexReport, ContractInfo, FunctionInfo, EntrypointInfo
 
 from .scope import resolve_scope, subtract_out_of_scope
 from .solc_ast import parse_ast
 from .indexer import build_index, to_dict
-from .report.md import render_index_md_from_dict #,render_index_md
+from .report.md import render_index_md_from_dict, render_entrypoints_md_from_dict #,render_index_md
+from .analyzers.entrypoints import collect_entrypoints
+
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -122,10 +124,26 @@ def _filter_contracts_for_output(
             out.append(c)
     return out
 
+def _filter_entrypoints_for_output(entrypoints, include_libraries: bool, include_interfaces: bool):
+    out = []
+    for ep in entrypoints:
+        kind = (ep.get("contract_kind") or "").lower()
+        if kind == "library" and not include_libraries:
+            continue
+        if kind == "interface" and not include_interfaces:
+            continue
+        out.append(ep)
+    return out
+
 @app.command()
 def index(
     scope: str = typer.Option(..., "--scope", help="Scope: .sol file, directory, or .txt list of paths"),
     out_of_scope: Optional[str] = typer.Option(None, "--out-of-scope", "-oos", help="Exclude: .sol, directory, or .txt list"),
+    entrypoints: bool = typer.Option(
+        False,
+        "--entrypoints", "-ep",
+        help="Include entrypoints map (public/external + receive/fallback) in the report",
+    ),
     out: Optional[Path] = typer.Option(None, "--out", "-o", help="Write output to file instead of stdout"),
     solc: str = typer.Option(
         os.getenv("SCARLET_SOLC", "solc"),
@@ -200,20 +218,40 @@ def index(
     fatal_errors = [e for e in ast_res.errors if "error" in e.lower() or "fatal" in e.lower() or "compiler error" in e.lower()]
 
     if not fatal_errors:
-        report = build_index(scope_dir=scope_dir, files=files, ast_res=ast_res)
+        report = build_index(scope_dir=scope_dir, files=files, ast_res=ast_res, entrypoints=entrypoints)
         payload = to_dict(report)
 
-        payload["contracts"] = _filter_contracts_for_output(
-            payload.get("contracts", []),
-            include_libraries=include_libraries,
-            include_interfaces=include_interfaces,
-        )
+        if entrypoints:
+            # ENTRYPOINTS MODE (contracts only; no interfaces/libs by default)
+            eps = payload.get("entrypoints", []) or []
+            eps = [ep for ep in eps if (ep.get("contract_kind") or "").lower() == "contract"]
 
-        if fmt == "json":
-            _write_output(json.dumps(payload, indent=2, ensure_ascii=False), out)
+            payload = {
+                "directory": payload.get("directory"),
+                "files": payload.get("files", []),
+                "entrypoints": eps,
+            }
+
+            if fmt == "json":
+                text = json.dumps(payload, indent=2, ensure_ascii=False)
+            else:
+                text = render_entrypoints_md_from_dict(payload)
+
         else:
-            _write_output(render_index_md_from_dict(payload), out)
+            # INDEX MODE
+            payload["contracts"] = _filter_contracts_for_output(
+                payload.get("contracts", []),
+                include_libraries=include_libraries,
+                include_interfaces=include_interfaces,
+            )
+            payload.pop("entrypoints", None)
 
+            if fmt == "json":
+                _write_output(json.dumps(payload, indent=2, ensure_ascii=False), out)
+            else:
+                _write_output(render_index_md_from_dict(payload), out)
+
+        _write_output(text, out)
         raise typer.Exit(code=0)
 
 
@@ -255,6 +293,22 @@ def index(
         c for c in contracts
         if c.file and str(Path(c.file).resolve()) in allowed
     ]
+
+    eps = []
+    if entrypoints:
+        src_by_file = {}
+        for c in contracts:
+            if not c.file:
+                continue
+            try:
+                src_by_file[c.file] = Path(c.file).read_text(encoding="utf-8")
+            except Exception:
+                src_by_file[c.file] = ""
+
+        eps = collect_entrypoints(contracts=contracts, src_by_file=src_by_file)
+
+        # filter noise: contracts only
+        eps = [ep for ep in eps if (ep.contract_kind or "").lower() == "contract"]
 
     if not full:
         contracts = [
@@ -300,6 +354,24 @@ def index(
         ],
     }
 
+    if entrypoints:
+        payload["entrypoints"] = [
+            {
+                "contract": ep.contract,
+                "contract_kind": ep.contract_kind,
+                "file": ep.file,
+                "signature": ep.signature,
+                "name": ep.name,
+                "visibility": ep.visibility,
+                "mutability": ep.mutability,
+                "modifiers": ep.modifiers,
+                "line": ep.line,
+                "tags": ep.tags,
+            }
+            for ep in eps
+        ]
+
+
     payload["contracts"] = _filter_contracts_for_output(
         payload.get("contracts", []),
         include_libraries=include_libraries,
@@ -310,7 +382,11 @@ def index(
         if fmt == "json":
             _write_output(json.dumps(payload, indent=2, ensure_ascii=False), out)
         else:
-            _write_output(render_index_md_from_dict(payload), out)
+            if entrypoints:
+                _write_output(render_entrypoints_md_from_dict(payload), out)
+            else:
+                _write_output(render_index_md_from_dict(payload), out)
+
     except Exception as e:
         sys.stderr.write(f"Render failed: {type(e).__name__}: {e}\n")
         sys.stderr.flush()

@@ -1,20 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from typing import Any
 
 from .solc_ast import SolcAstResult
 
+from .analyzers.entrypoints import collect_entrypoints
+
 
 @dataclass(frozen=True)
 class FunctionInfo:
-    name: str  # includes special: constructor/receive/fallback
+    name: str
     signature: str
     visibility: str
     mutability: str
     modifiers: list[str]
     line: int  # 1-based
+    src_start: int = 0
+    src_len: int = 0
 
 
 @dataclass(frozen=True)
@@ -26,12 +30,30 @@ class ContractInfo:
     has_receive: bool
     has_fallback: bool
 
+@dataclass(frozen=True)
+class EntrypointInfo:
+    contract: str
+    contract_kind: str
+    file: str
+    signature: str
+    name: str
+    visibility: str
+    mutability: str
+    modifiers: list[str]
+    line: int  # 1-based
+    tags: list[str]
+
+    # future
+    is_inherited: bool = False
+    origin_contract: str | None = None
+    state_writes: list[str] | None = None
 
 @dataclass(frozen=True)
 class IndexReport:
     directory: str
     files: list[str]
     contracts: list[ContractInfo]
+    entrypoints: list[EntrypointInfo] = field(default_factory=list)
 
 
 def _offset_to_line(src_text: str, offset: int) -> int:
@@ -51,13 +73,13 @@ def _walk(node: Any):
             yield from _walk(it)
 
 
-def _parse_src_field(src: str) -> int:
-    # "start:length:fileIndex"
+def _parse_src_field(src: str) -> tuple[int, int]:
     try:
-        start_s, _len_s, _file_s = src.split(":")
-        return int(start_s)
+        start_s, len_s, _file_s = src.split(":")
+        return int(start_s), int(len_s)
     except Exception:
-        return 0
+        return 0, 0
+
 
 
 def _fmt_params(params_node: dict[str, Any]) -> str:
@@ -93,11 +115,13 @@ def _is_fallback(fn: dict[str, Any]) -> bool:
     return fn.get("kind") == "fallback"
 
 
-def build_index(scope_dir: Path, files: list[Path], ast_res: SolcAstResult) -> IndexReport:
+def build_index(scope_dir: Path, files: list[Path], ast_res: SolcAstResult, entrypoints: bool = False) -> IndexReport:
     contracts: list[ContractInfo] = []
+    src_by_file: dict[str, str] = {}
 
     for f in files:
         src_text = f.read_text(encoding="utf-8")
+        src_by_file[f.as_posix()] = src_text
         ast = ast_res.ast_by_file.get(f.resolve())
         if not ast:
             continue
@@ -152,7 +176,7 @@ def build_index(scope_dir: Path, files: list[Path], ast_res: SolcAstResult) -> I
                     sig += f" returns ({rets})"
 
                 src_field = fn.get("src") or "0:0:0"
-                start = _parse_src_field(src_field)
+                start, length = _parse_src_field(src_field)
                 line = _offset_to_line(src_text, start)
 
                 funcs.append(
@@ -163,6 +187,8 @@ def build_index(scope_dir: Path, files: list[Path], ast_res: SolcAstResult) -> I
                         mutability=mutability,
                         modifiers=modifiers,
                         line=line,
+                        src_start=start,
+                        src_len=length
                     )
                 )
 
@@ -188,10 +214,15 @@ def build_index(scope_dir: Path, files: list[Path], ast_res: SolcAstResult) -> I
                 )
             )
 
+    eps: list[EntrypointInfo] = []
+    if entrypoints:
+        eps = collect_entrypoints(contracts=contracts, src_by_file=src_by_file)
+
     return IndexReport(
         directory=str(scope_dir),
         files=[p.as_posix() for p in files],
         contracts=sorted(contracts, key=lambda c: (c.file, c.name)),
+        entrypoints=eps,
     )
 
 
