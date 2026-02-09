@@ -24,7 +24,7 @@ from .indexer import IndexReport, ContractInfo, FunctionInfo
 from .scope import resolve_scope, subtract_out_of_scope
 from .solc_ast import parse_ast
 from .indexer import build_index, to_dict
-from .report.md import render_index_md, render_index_md_from_dict
+from .report.md import render_index_md_from_dict #,render_index_md
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -104,6 +104,24 @@ def _find_foundry_root(start: Path) -> Path:
             return start if start.is_dir() else start.parent
         cur = cur.parent
 
+def _filter_contracts_for_output(
+    contracts: list[dict],
+    include_libraries: bool,
+    include_interfaces: bool,
+) -> list[dict]:
+    allowed = {"contract"}
+    if include_libraries:
+        allowed.add("library")
+    if include_interfaces:
+        allowed.add("interface")
+
+    out: list[dict] = []
+    for c in contracts:
+        kind = (c.get("kind") or "contract").lower()
+        if kind in allowed:
+            out.append(c)
+    return out
+
 @app.command()
 def index(
     scope: str = typer.Option(..., "--scope", help="Scope: .sol file, directory, or .txt list of paths"),
@@ -119,6 +137,16 @@ def index(
         False,
         "--full",
         help="Include internal/private functions",
+    ),
+    include_libraries: bool = typer.Option(
+        False,
+        "--include-libraries",
+        help="Include libraries in the report",
+    ),
+    include_interfaces: bool = typer.Option(
+        False,
+        "--include-interfaces",
+        help="Include interfaces in the report",
     ),
 ) -> None:
     # Output format is determined by --out extension.
@@ -172,15 +200,22 @@ def index(
     fatal_errors = [e for e in ast_res.errors if "error" in e.lower() or "fatal" in e.lower() or "compiler error" in e.lower()]
 
     if not fatal_errors:
-        # ✅ solc worked, proceed as before
         report = build_index(scope_dir=scope_dir, files=files, ast_res=ast_res)
+        payload = to_dict(report)
+
+        payload["contracts"] = _filter_contracts_for_output(
+            payload.get("contracts", []),
+            include_libraries=include_libraries,
+            include_interfaces=include_interfaces,
+        )
+
         if fmt == "json":
-            payload = json.dumps(to_dict(report), indent=2, ensure_ascii=False)
-            _write_output(payload, out)
+            _write_output(json.dumps(payload, indent=2, ensure_ascii=False), out)
         else:
-            md = render_index_md(report)
-            _write_output(md, out)
+            _write_output(render_index_md_from_dict(payload), out)
+
         raise typer.Exit(code=0)
+
 
     # --- Fallback: Slither path ---
     # If solc failed (e.g. 403 via solc-select), use Slither to build index.
@@ -264,6 +299,12 @@ def index(
             for c in contracts
         ],
     }
+
+    payload["contracts"] = _filter_contracts_for_output(
+        payload.get("contracts", []),
+        include_libraries=include_libraries,
+        include_interfaces=include_interfaces,
+    )
 
     try:
         if fmt == "json":
