@@ -19,13 +19,14 @@ from typing import Optional
 import typer
 
 from .slither_index import build_index_with_slither
-from .indexer import IndexReport, ContractInfo, FunctionInfo, EntrypointInfo
+from .indexer import IndexReport, ContractInfo, FunctionInfo, EntrypointInfo, SinkInfo
 
 from .scope import resolve_scope, subtract_out_of_scope
 from .solc_ast import parse_ast
 from .indexer import build_index, to_dict
-from .report.md import render_index_md_from_dict, render_entrypoints_md_from_dict #,render_index_md
+from .report.md import render_index_md_from_dict, render_entrypoints_md_from_dict, render_sinks_md_from_dict #,render_index_md
 from .analyzers.entrypoints import collect_entrypoints
+from .analyzers.sinks import collect_sinks
 
 
 app = typer.Typer(
@@ -144,6 +145,11 @@ def index(
         "--entrypoints", "-ep",
         help="Include entrypoints map (public/external + receive/fallback) in the report",
     ),
+    sinks: bool = typer.Option(
+        False,
+        "--sinks", "-sinks",
+        help="Include sinks map (external influence points: calls-out, balanceOf, etc.)",
+    ),
     out: Optional[Path] = typer.Option(None, "--out", "-o", help="Write output to file instead of stdout"),
     solc: str = typer.Option(
         os.getenv("SCARLET_SOLC", "solc"),
@@ -179,6 +185,9 @@ def index(
             fmt = "json"
         else:
             raise typer.BadParameter("out file must end with .md or .json (e.g. report.md or report.json)")
+
+    if entrypoints and sinks:
+        raise typer.BadParameter("Use either --entrypoints or --sinks (not both) for now.")
 
     included = resolve_scope(scope)
     scope_dir = Path(scope).expanduser().resolve()
@@ -217,8 +226,13 @@ def index(
 
     fatal_errors = [e for e in ast_res.errors if "error" in e.lower() or "fatal" in e.lower() or "compiler error" in e.lower()]
 
+    if fatal_errors:
+        sys.stderr.write("Solc errors:\n" + "\n".join(ast_res.errors) + "\n")
+        sys.stderr.flush()
+
+
     if not fatal_errors:
-        report = build_index(scope_dir=scope_dir, files=files, ast_res=ast_res, entrypoints=entrypoints)
+        report = build_index(scope_dir=scope_dir, files=files, ast_res=ast_res, entrypoints=entrypoints, sinks=sinks)
         payload = to_dict(report)
 
         if entrypoints:
@@ -237,6 +251,22 @@ def index(
             else:
                 text = render_entrypoints_md_from_dict(payload)
 
+        elif sinks:
+            # SINKS MODE
+            sks = payload.get("sinks", []) or []
+            sks = [s for s in sks if (s.get("contract_kind") or "").lower() == "contract"]
+
+            payload = {
+                "directory": payload.get("directory"),
+                "files": payload.get("files", []),
+                "sinks": sks,
+            }
+
+            if fmt == "json":
+                text = json.dumps(payload, indent=2, ensure_ascii=False)
+            else:
+                text = render_sinks_md_from_dict(payload)
+
         else:
             # INDEX MODE
             payload["contracts"] = _filter_contracts_for_output(
@@ -245,11 +275,12 @@ def index(
                 include_interfaces=include_interfaces,
             )
             payload.pop("entrypoints", None)
+            payload.pop("sinks", None)
 
             if fmt == "json":
-                _write_output(json.dumps(payload, indent=2, ensure_ascii=False), out)
+                text = json.dumps(payload, indent=2, ensure_ascii=False)
             else:
-                _write_output(render_index_md_from_dict(payload), out)
+                text = render_index_md_from_dict(payload)
 
         _write_output(text, out)
         raise typer.Exit(code=0)
@@ -258,6 +289,14 @@ def index(
     # --- Fallback: Slither path ---
     # If solc failed (e.g. 403 via solc-select), use Slither to build index.
     sys.stderr.write("Solc failed; falling back to Slither indexer.\n")
+    if sinks:
+        _write_output(
+            "ERROR: --sinks currently requires solc AST parsing. Solc failed, and Slither fallback doesn't support sinks yet.\n"
+            "Tip: provide a working solc via --solc or SCARLET_SOLC (e.g. --solc /usr/bin/solc).\n",
+            out,
+        )
+        raise typer.Exit(code=2)
+
     if resolved_solc:
         sys.stderr.write(f"solc resolved to: {resolved_solc}\n")
     sys.stderr.flush()

@@ -7,6 +7,7 @@ from typing import Any
 from .solc_ast import SolcAstResult
 
 from .analyzers.entrypoints import collect_entrypoints
+from .analyzers.sinks import collect_sinks
 
 
 @dataclass(frozen=True)
@@ -49,11 +50,25 @@ class EntrypointInfo:
     state_writes: list[str] | None = None
 
 @dataclass(frozen=True)
+class SinkInfo:
+    contract: str
+    contract_kind: str
+    file: str
+    signature: str
+    name: str
+    visibility: str
+    mutability: str
+    modifiers: list[str]
+    line: int  # 1-based
+    tags: list[str]
+
+@dataclass(frozen=True)
 class IndexReport:
     directory: str
     files: list[str]
     contracts: list[ContractInfo]
     entrypoints: list[EntrypointInfo] = field(default_factory=list)
+    sinks: list[SinkInfo] = field(default_factory=list)
 
 
 def _offset_to_line(src_text: str, offset: int) -> int:
@@ -115,7 +130,7 @@ def _is_fallback(fn: dict[str, Any]) -> bool:
     return fn.get("kind") == "fallback"
 
 
-def build_index(scope_dir: Path, files: list[Path], ast_res: SolcAstResult, entrypoints: bool = False) -> IndexReport:
+def build_index(scope_dir: Path, files: list[Path], ast_res: SolcAstResult, entrypoints: bool = False, sinks: bool = False) -> IndexReport:
     contracts: list[ContractInfo] = []
     src_by_file: dict[str, str] = {}
 
@@ -218,11 +233,16 @@ def build_index(scope_dir: Path, files: list[Path], ast_res: SolcAstResult, entr
     if entrypoints:
         eps = collect_entrypoints(contracts=contracts, src_by_file=src_by_file)
 
+    sks: list[SinkInfo] = []
+    if sinks:
+        sks = collect_sinks(contracts=contracts, src_by_file=src_by_file)
+
     return IndexReport(
         directory=str(scope_dir),
         files=[p.as_posix() for p in files],
         contracts=sorted(contracts, key=lambda c: (c.file, c.name)),
         entrypoints=eps,
+        sinks=sks,
     )
 
 

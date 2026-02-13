@@ -57,6 +57,22 @@ def _toc_entrypoints_md(contract_entries: list[tuple[str, str]]) -> list[str]:
     lines.append("")
     return lines
 
+def _toc_sinks_md(contract_entries: list[tuple[str, str]]) -> list[str]:
+    """
+    TOC for sinks-only report.
+    contract_entries: list of (display_name, anchor_id)
+    """
+    lines: list[str] = []
+    lines.append("## Table of Contents")
+    lines.append("- [Directory](#directory)")
+    lines.append("- [Files](#files)")
+    lines.append("- [Sinks](#sinks)")
+    if contract_entries:
+        lines.append("  - [Contracts list](#sinks-contracts-list)")
+        for display, aid in contract_entries:
+            lines.append(f"  - [{display}](#{aid})")
+    lines.append("")
+    return lines
 
 def render_index_md(report: IndexReport) -> str:
     lines: list[str] = []
@@ -276,6 +292,102 @@ def render_entrypoints_md_from_dict(payload: dict) -> str:
             lines.append("  - tags: " + ", ".join(f"`{t}`" for t in tags))
 
         mods = ep.get("modifiers", []) or []
+        if mods:
+            lines.append("  - modifiers: " + ", ".join(f"`{m}`" for m in mods))
+        else:
+            lines.append("  - modifiers: -")
+
+        lines.append("")
+
+    return "\n".join(lines)
+
+def render_sinks_md_from_dict(payload: dict) -> str:
+    lines: list[str] = []
+    lines.append("# SCARLET Sinks Report")
+    lines.append("")
+
+    sinks = payload.get("sinks", []) or []
+
+    # Precompute contract anchors for TOC (group by contract/kind)
+    contract_entries: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for s in sinks:
+        name = s.get("contract", "") or "<unknown>"
+        kind = s.get("contract_kind", "contract") or "contract"
+        display = f"{name} ({kind})"
+        aid = _anchor_id("sinks-contract", name)
+        key = f"{name}|{kind}"
+        if key not in seen:
+            seen.add(key)
+            contract_entries.append((display, aid))
+
+    # TOC
+    lines.extend(_toc_sinks_md(contract_entries))
+
+    # Directory / Files
+    lines.append('<a id="directory"></a>')
+    lines.append("## Directory")
+    lines.append(f"`{payload.get('directory','')}`")
+    lines.append("")
+
+    lines.append('<a id="files"></a>')
+    lines.append("## Files")
+    for f in payload.get("files", []):
+        lines.append(f"- `{f}`")
+    lines.append("")
+
+    lines.append('<a id="sinks"></a>')
+    lines.append("## Sinks")
+    if not sinks:
+        lines.append("_No sinks found._")
+        return "\n".join(lines)
+
+    lines.append('<a id="sinks-contracts-list"></a>')
+    lines.append("")
+
+    # Sort by file, contract, line
+    sinks_sorted = sorted(
+        sinks,
+        key=lambda s: (
+            s.get("file") or "",
+            s.get("contract") or "",
+            s.get("line") or 0,
+            s.get("name") or "",
+        ),
+    )
+
+    cur_key = None
+    for s in sinks_sorted:
+        c_name = s.get("contract", "") or "<unknown>"
+        c_kind = s.get("contract_kind", "contract") or "contract"
+        fpath = s.get("file", "") or ""
+
+        key = (fpath, c_name, c_kind)
+        if key != cur_key:
+            cur_key = key
+            aid = _anchor_id("sinks-contract", c_name)
+            lines.append(f'<a id="{aid}"></a>')
+            lines.append(f"### {c_name} ({c_kind})")
+            if fpath:
+                lines.append(f"- file: `{fpath}`")
+            lines.append("")
+
+        sig = s.get("signature", "") or ""
+        vis = s.get("visibility", "unknown") or "unknown"
+        mut = s.get("mutability", "") or ""
+        line_no = s.get("line", None)
+
+        suffix = f" [{vis}{(' ' + mut) if mut else ''}]"
+        loc = f" - line {line_no}" if line_no else ""
+        lines.append(f"- `{sig}`{suffix}{loc}")
+
+        tags = s.get("tags", []) or []
+        if tags:
+            lines.append("  - tags: " + ", ".join(f"`{t}`" for t in tags))
+        else:
+            lines.append("  - tags: -")
+
+        mods = s.get("modifiers", []) or []
         if mods:
             lines.append("  - modifiers: " + ", ".join(f"`{m}`" for m in mods))
         else:
