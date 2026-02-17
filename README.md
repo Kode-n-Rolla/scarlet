@@ -1,4 +1,8 @@
-<h1 align='center'>SCARLET</h1>
+<h1 align='center'>SCARLET v0.1.0</h1>
+
+<p align="center">
+  <img src="assets/scarlet-logo.png" width="800">
+</p>
 
 <p align="center">
  <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-installation'>Installation</a> . <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-basic-usage'>Usage</a> . <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-roadmap'>Roadmap</a>
@@ -74,6 +78,10 @@ pip install -e .
 
 scarlet --help
 ```
+
+<p align="center">
+  <img src="assets/scarlet-h.png" width="1000">
+</p>
 
 ## 🧠 Basic Usage
 `scarlet --scope <path>`
