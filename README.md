@@ -75,6 +75,7 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
 pip install -U pip
 pip install -e .
+pip install -e ".[dev]" # for slither usage
 
 scarlet --help
 ```
