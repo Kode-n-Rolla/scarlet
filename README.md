@@ -305,11 +305,14 @@ SCARLET is a <b>structural reconnaissance tool</b>.
 It reduces cognitive load during early-stage protocol review.
 
 ## 🛣 Roadmap
+
 ### 🔹 Phase 1 — Stabilization
 - Improve heuristic coverage
 - Expand inline guard detection
 - Improve Slither offset precision
 - Large-scale testing on production protocols
+
+👉 MVP complete. Active testing on real-world audit targets.
 
 ### 🔹 Phase 2 — Call Graph Engine
 
@@ -361,8 +364,3 @@ Accelerate Foundry / Echidna fuzz harness setup.
 - Cross-function storage mutation map
 - Privilege surface visualization
 - External dependency matrix
-
-### 📌 Current Phase
-
-MVP complete.
-Active testing on real-world audit targets.
