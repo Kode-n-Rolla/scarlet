@@ -143,14 +143,14 @@ def index(
     entrypoints: bool = typer.Option(
         False,
         "--entrypoints", "-ep",
-        help="Include entrypoints map (public/external + receive/fallback) in the report",
+        help="Craft entrypoints map (public/external + receive/fallback) in the report",
     ),
     sinks: bool = typer.Option(
         False,
         "--sinks", "-sinks",
-        help="Include sinks map (external influence points: calls-out, balanceOf, etc.)",
+        help="Craft sinks map (external influence points: calls-out, balanceOf, etc.)",
     ),
-    out: Optional[Path] = typer.Option(None, "--out", "-o", help="Write output to file instead of stdout"),
+    out: Optional[Path] = typer.Option(None, "--out", "-o", help="Write output to file (.md or .json) instead of stdout"),
     solc: str = typer.Option(
         os.getenv("SCARLET_SOLC", "solc"),
         "--solc",
