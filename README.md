@@ -1,12 +1,12 @@
 <h1 align='center'>SCARLET v0.1.0</h1>
+<p align="center">
+ <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-installation'>Installation</a> • <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-basic-usage'>Usage</a> • <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-roadmap'>Roadmap</a>
+</p>
 
 <p align="center">
   <img src="assets/scarlet-logo.png" width="800">
 </p>
 
-<p align="center">
- <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-installation'>Installation</a> • <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-basic-usage'>Usage</a> • <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-roadmap'>Roadmap</a>
-</p>
 
 ---
 
