@@ -173,7 +173,7 @@ def index(
     ),
     sinks: bool = typer.Option(
         False,
-        "--sinks", "-sinks",
+        "--sinks", "-s",
         help="Craft sinks map (external influence points: calls-out, balanceOf, etc.)",
     ),
     out: Optional[Path] = typer.Option(None, "--out", "-o", help="Write output to file (.md or .json) instead of stdout"),
