@@ -74,11 +74,11 @@ python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
 pip install -U pip
-pip install -e .
-pip install -e ".[dev]" # for slither usage
+pip install -e ".[dev]"  # includes Slither fallback for MVP
 
 scarlet --help
 ```
+> `dev` extra currently includes Slither dependency required for fallback. Will be split into runtime extras soon
 
 <p align="center">
   <img src="assets/scarlet-h.png" width="1000">
