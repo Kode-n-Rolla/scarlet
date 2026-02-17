@@ -8,9 +8,14 @@ from os import fspath
 # Slither imports
 from slither.slither import Slither
 
+# This module provides a fallback indexing layer for SCARLET.
+# It is intentionally best-effort and does NOT guarantee parity with solc AST parsing.
+# The goal is to recover a usable contract/function map even when solc compilation fails.
 
 @dataclass(frozen=True)
 class SlitherFunctionInfo:
+    # Mirrors FunctionInfo from indexer.py but based on Slither objects.
+    # Kept separate to avoid mixing solc-specific and slither-specific assumptions.
     name: str
     signature: str
     visibility: str
@@ -24,6 +29,9 @@ class SlitherFunctionInfo:
 
 @dataclass(frozen=True)
 class SlitherContractInfo:
+    # Lightweight normalized representation of Slither contracts.
+    # Designed so the CLI layer can later re-filter by scope and visibility
+    #   without needing direct Slither objects.
     name: str
     kind: str
     file: str
@@ -34,7 +42,11 @@ class SlitherContractInfo:
 
 def _fn_line(fn) -> int:
     # best-effort line number
-    # slither provides source_mapping with lines often
+    #   slither provides source_mapping with lines often
+    #
+    # Line numbers in Slither can be incomplete depending on compilation backend
+    #   (crytic-compile, foundry, etc.). Returning 1 as fallback keeps reports valid
+    #   and avoids None values propagating into renderers.
     sm = getattr(fn, "source_mapping", None)
     if sm and getattr(sm, "lines", None):
         try:
@@ -44,6 +56,13 @@ def _fn_line(fn) -> int:
     return 1
 
 def _fn_src_info(fn) -> tuple[int, int, str]:
+    # Extract raw offset/length/file from Slither source_mapping.
+    # These values are best-effort and may differ from solc AST offsets.
+    #
+    # SCARLET keeps them to preserve future compatibility with:
+    #   - code excerpts
+    #   - cross-linking
+    #   - diff-based analysis
     sm = getattr(fn, "source_mapping", None)
     if not sm:
         return (0, 0, "")
@@ -59,6 +78,10 @@ def _fn_src_info(fn) -> tuple[int, int, str]:
     try:
         if hasattr(file_path, "absolute"):
             file_path = file_path.absolute
+        # Slither may return custom filename objects (not plain str).
+        # Normalizing to resolved absolute path ensures:
+        #   - deterministic comparisons in CLI scope filtering
+        #   - consistent JSON output across environments
         file_path = str(Path(fspath(file_path)).expanduser().resolve()) if file_path else ""
     except Exception:
         file_path = ""
@@ -71,11 +94,19 @@ def build_index_with_slither(entry_path: Path) -> list[SlitherContractInfo]:
     Slither expects a compilation target. For directories, we can point to a root .sol
     later; for now, point to the dir and let crytic-compile attempt.
     """
+    
+    # IMPORTANT:
+    # Slither works best when entry_path is a project root (foundry/hardhat),
+    #   because crytic-compile can resolve remappings and dependencies.
+    # Passing individual files may lead to partial or duplicated results.
+
     s = Slither(str(entry_path))
 
     out: list[SlitherContractInfo] = []
     for c in s.contracts:
-        # Skip duplicates from dependencies if you want later via out-of-scope filtering.
+        # Slither may include dependency contracts (lib/, node_modules/, etc.).
+        # SCARLET does NOT filter here; filtering is done at CLI level after
+        #   scope resolution, to keep separation of concerns.
         cname = c.name
         ckind = "contract"
         if getattr(c, "is_interface", False):
@@ -99,6 +130,9 @@ def build_index_with_slither(entry_path: Path) -> list[SlitherContractInfo]:
 
         if file_path:
             # Slither may return a Filename(...) object, not a str
+            #
+            # Normalizing here ensures that later filtering by absolute Path
+            # (in CLI layer) behaves the same way as solc-based indexing.
             if hasattr(file_path, "absolute"):
                 file_path = file_path.absolute
 
@@ -109,6 +143,10 @@ def build_index_with_slither(entry_path: Path) -> list[SlitherContractInfo]:
 
         funcs: list[SlitherFunctionInfo] = []
         for f in c.functions:
+            # Slither's function model already includes inherited functions.
+            # SCARLET intentionally keeps them, because inherited public/external
+            #   functions are still part of the effective attack surface.
+
             # public/external/internal/private
             vis = getattr(f, "visibility", "") or ""
             mut = getattr(f, "state_mutability", "") or ""
@@ -121,6 +159,9 @@ def build_index_with_slither(entry_path: Path) -> list[SlitherContractInfo]:
 
             # signature
             # Slither has full_name like "foo(uint256)"
+            #
+            # This is NOT the canonical ABI signature (no selector computation here).
+            # It is intended for human-readable reporting only.
             sig = getattr(f, "full_name", None) or getattr(f, "name", "<anonymous>")
             # returns - best effort
             rets = ""
@@ -131,6 +172,9 @@ def build_index_with_slither(entry_path: Path) -> list[SlitherContractInfo]:
                 rets = ""
 
             signature = sig
+            # Modifier names are appended for readability.
+            # Complex modifier arguments are intentionally not serialized,
+            # to avoid unstable or overly verbose output.
             if mods:
                 signature += " " + " ".join(mods)
             if rets:
@@ -158,10 +202,17 @@ def build_index_with_slither(entry_path: Path) -> list[SlitherContractInfo]:
                 kind=ckind,
                 file=str(file_path),
                 functions=sorted(funcs, key=lambda x: (x.visibility, x.name)),
+                # Sorting here is simpler than solc-based path.
+                # The goal is determinism, not auditor-optimized ordering.
+                # Final presentation adjustments can still be done in higher layers.
                 has_receive=has_receive,
                 has_fallback=has_fallback,
             )
         )
 
     # deterministic ordering
+    # Deterministic ordering is critical for:
+    #   - stable JSON outputs
+    #   - reproducible CI artifacts
+    #   - meaningful git diffs between runs
     return sorted(out, key=lambda c: (c.file, c.name))

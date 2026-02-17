@@ -1,4 +1,3 @@
-# scarlet/analyzers/sinks.py
 from __future__ import annotations
 
 import re
@@ -11,7 +10,17 @@ CALLS_OUT_MARKERS = (
     ".call(", ".call{", ".delegatecall(", ".staticcall(",
 )
 
+# SCARLET "sinks" are external influence / trust-boundary signals:
+#   - low-level external calls (.call/.delegatecall/.staticcall) as interaction surfaces
+#   - balanceOf(...) reads as a common dependency on external token state
+#
+# This is a heuristic, text-based scan over the function source slice.
+# It is designed for fast triage and can miss cases (interfaces, assembly, helpers)
+#   or produce false positives (strings/comments). Treat tags as prioritization hints.
+
 def _slice_src(src: str, start: int, length: int) -> str:
+    # Offsets come from the parser layer (solc AST preferred; slither fallback best-effort).
+    # If slicing fails, SCARLET avoids tagging to reduce misleading output.
     if start <= 0 or length <= 0:
         return ""
     if start >= len(src):
@@ -20,6 +29,8 @@ def _slice_src(src: str, start: int, length: int) -> str:
     return src[start:end]
 
 def _detect_calls_out(fn_src: str) -> tuple[bool, bool]:
+    # Detect low-level calls as a rough "interaction surface" signal.
+    # This does not account for high-level calls (IERC20.transfer), Yul, or helper wrappers.
     if not fn_src:
         return (False, False)
     low = fn_src.lower()
@@ -28,6 +39,11 @@ def _detect_calls_out(fn_src: str) -> tuple[bool, bool]:
     return calls_out, has_delegate
 
 def _detect_balanceof(fn_src: str) -> tuple[bool, bool]:
+    # balanceOf(...) is treated as a sink because it pulls external state (token balances)
+    # into control-flow and accounting. This is frequently relevant for:
+    #   - share/asset conversions
+    #   - solvency checks
+    #   - fee logic and conditional transfers
     if not fn_src:
         return (False, False)
     low = fn_src.lower()
@@ -66,6 +82,8 @@ def collect_sinks(contracts: "List[ContractInfo]", src_by_file: "Dict[str, str]"
 
             if not tags:
                 continue
+            # Only emit entries that have at least one sink tag.
+            # This keeps the sinks report focused and reduces noise for large repos.
 
             out.append(
                 SinkInfo(

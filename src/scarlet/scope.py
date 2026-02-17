@@ -11,35 +11,17 @@ class ScopeResult:
     excluded: list[Path]
     final: list[Path]
 
-def _read_path_list(txt_path: Path) -> list[Path]:
-    """
-    Read a .txt list of paths. Relative paths are resolved relative to the .txt file location.
-    Lines starting with # and empty lines are ignored.
-    """
-    base = txt_path.parent
-    out: list[Path] = []
-
-    for raw in txt_path.read_text(encoding="utf-8").splitlines():
-        s = raw.strip()
-        if not s or s.startswith("#"):
-            continue
-
-        p = Path(s)
-        if not p.is_absolute():
-            p = base / p
-
-        out.append(p.expanduser().resolve())
-
-    return out
-
 def _read_txt_list(txt_path: Path) -> list[Path]:
     """
     Reads a .txt file with paths. Rules:
-    - empty lines ignored
-    - lines starting with # ignored
-    - trims whitespace
-    - relative paths resolved relative to the .txt file location
+        - empty lines ignored
+        - lines starting with # ignored
+        - trims whitespace
+        - relative paths resolved relative to the .txt file location
     """
+    # SCARLET treats .txt lists as a "portable scope preset":
+    #   the file can be moved as a unit, and relative entries remain meaningful
+    #   because they are resolved relative to the .txt file location (not CWD).
     base = txt_path.parent
     items: list[Path] = []
     for raw in txt_path.read_text(encoding="utf-8").splitlines():
@@ -57,6 +39,7 @@ def _read_txt_list(txt_path: Path) -> list[Path]:
 
 def _collect_sol_files_in_dir(root: Path) -> list[Path]:
     # recursive .sol
+    # Deterministic ordering matters for reproducible reports and stable diffs.
     files = [p.resolve() for p in root.rglob("*.sol") if p.is_file()]
     files.sort()
     return files
@@ -65,9 +48,9 @@ def _collect_sol_files_in_dir(root: Path) -> list[Path]:
 def resolve_scope(scope: str | Path | None) -> list[Path]:
     """
     Returns a sorted list of .sol files from:
-    - .sol file
-    - directory (recursive)
-    - .txt list (paths to files/dirs)
+        - .sol file
+        - directory (recursive)
+        - .txt list (paths to files/dirs)
     """
     if scope is None:
         raise ValueError("Scope is required")
@@ -75,6 +58,10 @@ def resolve_scope(scope: str | Path | None) -> list[Path]:
     p = Path(scope).expanduser()
     if not p.is_absolute():
         p = p.resolve()
+    # Paths are normalized to absolute early to avoid subtle mismatches:
+    #   - comparisons between included/excluded sets
+    #   - duplicate detection when the same file appears via different paths
+    #   - platform differences around CWD and relative paths
 
     if not p.exists():
         raise FileNotFoundError(f"Scope path does not exist: {p}")
@@ -95,6 +82,9 @@ def resolve_scope(scope: str | Path | None) -> list[Path]:
                     out.extend(_collect_sol_files_in_dir(item))
                 elif item.is_file() and item.suffix.lower() == ".sol":
                     out.append(item.resolve())
+            # De-duplication is intentional:
+            #   the same file may appear multiple times (via directory + explicit file),
+            #   but SCARLET should index it once for predictable output.
             out = sorted(set(out))
             return out
 
@@ -103,6 +93,8 @@ def resolve_scope(scope: str | Path | None) -> list[Path]:
 
 
 def subtract_out_of_scope(included: Iterable[Path], out_of_scope: str | Path | None) -> ScopeResult:
+    # Normalizing to resolved paths is required to make subtraction reliable.
+    # Without it, the same file referenced via different relative paths may escape filtering.
     included_set = {p.resolve() for p in included}
 
     if out_of_scope is None:
@@ -112,6 +104,8 @@ def subtract_out_of_scope(included: Iterable[Path], out_of_scope: str | Path | N
     excluded = resolve_scope(out_of_scope)
     excluded_set = {p.resolve() for p in excluded}
 
+    # Set subtraction keeps behavior intuitive: "exclude exactly these files".
+    # It also prevents accidental duplicates in the final list.
     final_set = included_set - excluded_set
     return ScopeResult(
         included=sorted(included_set),

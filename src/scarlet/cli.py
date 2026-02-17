@@ -9,6 +9,13 @@ import json
 import os
 os.environ["RICH_TRACEBACK"] = "0"
 
+#
+# NOTE:
+# Typer uses Rich for tracebacks by default; in CLI tools this can be too noisy and can
+#   accidentally swallow/pretty-print errors in a way that hides the real root-cause
+#   (especially when piping output or when users copy logs into issues).
+# Explicitly disable Rich tracebacks to keep stderr deterministic and easier to debug.
+
 import sys
 import shutil
 import threading
@@ -19,7 +26,7 @@ from typing import Optional
 import typer
 
 from .slither_index import build_index_with_slither
-from .indexer import IndexReport, ContractInfo, FunctionInfo, EntrypointInfo, SinkInfo
+from .indexer import FunctionInfo, EntrypointInfo, SinkInfo
 
 from .scope import resolve_scope, subtract_out_of_scope
 from .solc_ast import parse_ast
@@ -80,6 +87,11 @@ class Spinner:
 
 
 def _write_output(content: str, out: Optional[Path]) -> None:
+    # Single output gateway:
+    #   - stdout when no --out is provided (easy piping)
+    #   - file write when --out is set (CI-friendly artifacts)
+    # Keeping this logic centralized prevents subtle differences between modes
+    #   (e.g., missing trailing newline, encoding issues, or broken parent dirs).  
     if out is None:
         sys.stdout.write(content)
         if not content.endswith("\n"):
@@ -89,6 +101,9 @@ def _write_output(content: str, out: Optional[Path]) -> None:
     out.write_text(content, encoding="utf-8")
 
 def _looks_like_script(path: str) -> bool:
+    # Used as a conservative heuristic when deciding how to treat user-provided scope
+    #   inputs. SCARLET only check the shebang header to avoid reading/parsing entire files
+    #   and to keep the CLI fast on large repos.
     try:
         p = Path(path)
         if not p.exists():
@@ -99,6 +114,9 @@ def _looks_like_script(path: str) -> bool:
         return False
 
 def _find_foundry_root(start: Path) -> Path:
+    # Slither behaves best when invoked from a project root (foundry/hardhat),
+    #   because it can resolve remappings/libs properly. When the scope is a .txt list
+    #   or a nested file, SCARLET walk upwards to find foundry.toml and use that as entry.
     cur = start if start.is_dir() else start.parent
     while True:
         if (cur / "foundry.toml").exists():
@@ -112,6 +130,14 @@ def _filter_contracts_for_output(
     include_libraries: bool,
     include_interfaces: bool,
 ) -> list[dict]:
+    # Output filtering is intentionally *presentation-only*.
+    # SCARLET still parse/build the full internal index first, but avoid showing
+    #   interface/library entries by default to keep reports focused on "deployable"
+    #   units. This prevents user confusion (interfaces often contain many signatures
+    #   that are not implemented here, libraries can inflate reports with helpers).
+    #
+    # IMPORTANT: analyzers may still need to see libs/interfaces internally, so
+    #   filtering happens at the final payload stage.
     allowed = {"contract"}
     if include_libraries:
         allowed.add("library")
@@ -175,6 +201,11 @@ def index(
 ) -> None:
     # Output format is determined by --out extension.
     # If --out is omitted, default to markdown in stdout.
+    #
+    # CLI contract:
+    #   - stdout defaults to Markdown for human reading / quick copy-paste
+    #   - explicit --out chooses the format based on extension (md/json)
+    # This avoids a separate --format flag and makes shell usage predictable.
     if out is None:
         fmt = "md"
     else:
@@ -190,6 +221,9 @@ def index(
         raise typer.BadParameter("Use either --entrypoints or --sinks (not both) for now.")
 
     included = resolve_scope(scope)
+    # scope_dir is used as the logical "project directory" in reports.
+    # If user points to a file, SCARLET anchor to its parent so relative paths
+    # in markdown/json remain stable and not tied to a single file path.
     scope_dir = Path(scope).expanduser().resolve()
     if scope_dir.is_file():
         scope_dir = scope_dir.parent
@@ -199,6 +233,12 @@ def index(
 
     # --- Foundry default excludes (no need to pass -oos every time) ---
     if out_of_scope is None:
+        # Ergonomics: Foundry repos typically include lib/, script/, test/ which are
+        #   (a) dependencies, (b) deployment scripts, or (c) tests. Including them
+        #   by default makes reports noisy and slows down parsing.
+        #
+        # Users can still opt-in by explicitly providing --out-of-scope to override
+        #   this behavior, but "no flags" should behave like "audit src/".
         project_root = Path(scope).expanduser().resolve()
         if project_root.is_dir() and (project_root / "foundry.toml").exists():
             lib_dir = project_root / "lib"
@@ -216,7 +256,12 @@ def index(
 
     # --- Attempt 1: solc AST path ---
     spinner = Spinner(enabled=not no_progress)
-    spinner.start(f"Parsing with solc... Progress {len(files)}/{len(files)} files")
+    spinner.start(f"Parsing with solc... Progress {len(files)} file(s)")
+    
+    # Strategy:
+    #   Prefer solc AST parsing because it gives the richest, version-accurate view
+    #   of the code (needed for sinks and more precise analysis). Slither fallback
+    #   is best-effort and may miss details when compilation context is incomplete.
 
     # Resolve 'solc' to an actual path for diagnostics
     resolved_solc = shutil.which(solc) if solc == "solc" else solc
@@ -225,6 +270,10 @@ def index(
     spinner.stop()
 
     fatal_errors = [e for e in ast_res.errors if "error" in e.lower() or "fatal" in e.lower() or "compiler error" in e.lower()]
+    # SCARLET only treat truly fatal compiler output as a hard stop.
+    # Non-fatal warnings (or partial failures in multi-file repos) shouldn't
+    #   force a fallback, because Slither can be *less* accurate and also fail
+    #   differently. This heuristic is intentionally conservative.
 
     if fatal_errors:
         sys.stderr.write("Solc errors:\n" + "\n".join(ast_res.errors) + "\n")
@@ -234,6 +283,9 @@ def index(
     if not fatal_errors:
         report = build_index(scope_dir=scope_dir, files=files, ast_res=ast_res, entrypoints=entrypoints, sinks=sinks)
         payload = to_dict(report)
+        # At this point payload is the single source of truth for rendering.
+        # All "modes" (index/entrypoints/sinks) are simply projections of the same
+        #   internal model, so output differences stay consistent and testable.
 
         if entrypoints:
             # ENTRYPOINTS MODE (contracts only; no interfaces/libs by default)
@@ -245,6 +297,9 @@ def index(
                 "files": payload.get("files", []),
                 "entrypoints": eps,
             }
+            # SCARLET intentionally return a reduced payload in ep/sinks modes.
+            # It keeps JSON stable for downstream tooling and keeps Markdown focused
+            #   on what the user asked for (no extra sections that look like "missing").
 
             if fmt == "json":
                 text = json.dumps(payload, indent=2, ensure_ascii=False)
@@ -261,6 +316,9 @@ def index(
                 "files": payload.get("files", []),
                 "sinks": sks,
             }
+            # Same reduced-payload rationale as entrypoints mode:
+            #   consumers can treat the output as "one primary section" without
+            #   guessing which other keys might appear.
 
             if fmt == "json":
                 text = json.dumps(payload, indent=2, ensure_ascii=False)
@@ -289,6 +347,12 @@ def index(
     # --- Fallback: Slither path ---
     # If solc failed (e.g. 403 via solc-select), use Slither to build index.
     sys.stderr.write("Solc failed; falling back to Slither indexer.\n")
+
+    # This fallback exists for real-world ergonomics: many users have broken solc
+    #   environments (solc-select, missing versions, CI images, etc.). Slither can
+    #   still recover a useful *index* even if full compilation fails.
+    #
+    # IMPORTANT: sinks require AST-level context, so we fail fast if solc is down.
     if sinks:
         _write_output(
             "ERROR: --sinks currently requires solc AST parsing. Solc failed, and Slither fallback doesn't support sinks yet.\n"
@@ -326,6 +390,10 @@ def index(
 
 
     # --- filter slither results to files in scope ---
+    # Slither may pull in dependencies outside the requested scope (e.g., lib/ or
+    #   remapped packages). Strictly re-apply the user's scope at the end so the
+    #   report doesn't unexpectedly include third-party code and so file lists stay
+    #   reproducible between machines.
     allowed = {str(p.resolve()) for p in files}
 
     contracts = [
@@ -348,6 +416,10 @@ def index(
 
         # filter noise: contracts only
         eps = [ep for ep in eps if (ep.contract_kind or "").lower() == "contract"]
+        # NOTE: Slither-based entrypoints are inherently heuristic:
+        #   SCARLET reconstruct "entrypointness" from Slither metadata + source text,
+        #   which can be slightly off for generated code / unusual formatting.
+        # Keeping this explicit helps users interpret results correctly.
 
     if not full:
         contracts = [
@@ -361,7 +433,10 @@ def index(
             )
             for c in contracts
         ]
-
+        # full=False is a UI choice: the default report is meant to highlight
+        #   externally reachable surface area. Internal/private functions often
+        #   explode report size without helping initial triage.
+    
     # drop empty contracts
     contracts = [c for c in contracts if c.functions]
 

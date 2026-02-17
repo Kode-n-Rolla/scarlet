@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..indexer import IndexReport, ContractInfo, FunctionInfo
+from ..indexer import IndexReport, FunctionInfo
 
 import re
 
@@ -9,6 +9,9 @@ def _anchor_id(prefix: str, name: str) -> str:
     """
     Generate a stable markdown anchor id.
     """
+    # SCARLET uses explicit, deterministic anchors instead of relying on renderer-specific
+    #   auto-generated header IDs (GitHub/GitLab/Markdown engines may differ).
+    # This keeps Table of Contents links stable across environments and over time.
     s = name.strip().lower()
     s = re.sub(r"[^a-z0-9]+", "-", s)   # replace non-alnum with -
     s = re.sub(r"-{2,}", "-", s).strip("-")
@@ -18,6 +21,8 @@ def _anchor_id(prefix: str, name: str) -> str:
 
 
 def _fmt_fn(fi: FunctionInfo) -> str:
+    # Single-line function formatting is intentionally compact:
+    #   it optimizes for quick scanning and easy copy-paste into audit notes.
     vis = fi.visibility or "unknown"
     mut = fi.mutability or ""
     suffix = f" [{vis}{(' ' + mut) if mut else ''}]"
@@ -28,6 +33,8 @@ def _toc_md(contract_entries: list[tuple[str, str]]) -> list[str]:
     contract_entries: list of (display_name, anchor_id)
     returns markdown lines for TOC section.
     """
+    # TOC is generated manually because SCARLET injects custom anchors (<a id="...">).
+    # This avoids fragile dependencies on markdown engines and keeps deep links stable.
     lines: list[str] = []
     lines.append("## Table of Contents")
     lines.append("- [Directory](#directory)")
@@ -45,6 +52,8 @@ def _toc_entrypoints_md(contract_entries: list[tuple[str, str]]) -> list[str]:
     TOC for entrypoints-only report.
     contract_entries: list of (display_name, anchor_id)
     """
+    # Entrypoints report has a reduced payload and a dedicated TOC section,
+    # so users can jump directly to a contract’s external surface.
     lines: list[str] = []
     lines.append("## Table of Contents")
     lines.append("- [Directory](#directory)")
@@ -62,6 +71,8 @@ def _toc_sinks_md(contract_entries: list[tuple[str, str]]) -> list[str]:
     TOC for sinks-only report.
     contract_entries: list of (display_name, anchor_id)
     """
+    # Sinks report is designed for "where can external influence enter/leave" triage.
+    # TOC groups by contract to make scanning large repos manageable.
     lines: list[str] = []
     lines.append("## Table of Contents")
     lines.append("- [Directory](#directory)")
@@ -79,6 +90,11 @@ def render_index_md(report: IndexReport) -> str:
     lines.append("# SCARLET Index Report")
     lines.append("")
 
+    # Anchor strategy:
+    #   - section anchors use fixed IDs (directory/files/contracts)
+    #   - per-contract anchors use a deterministic slug from the contract name
+    # This makes links stable even if the visible header text changes slightly.
+    # Note: name-only anchors can collide if different files contain same contract name.
     # Precompute contract anchors for TOC
     contract_entries: list[tuple[str, str]] = []
     for c in report.contracts:
@@ -90,6 +106,8 @@ def render_index_md(report: IndexReport) -> str:
     lines.extend(_toc_md(contract_entries))
 
     # Sections with explicit anchors
+    # Explicit <a id="..."> is used to decouple navigation targets from Markdown headings.
+    # Some renderers normalize headings differently; explicit anchors stay predictable.
     lines.append('<a id="directory"></a>')
     lines.append("## Directory")
     lines.append(f"`{report.directory}`")
@@ -115,6 +133,8 @@ def render_index_md(report: IndexReport) -> str:
     for c in report.contracts:
         aid = _anchor_id("contract", c.name)
         lines.append(f'<a id="{aid}"></a>')
+        # The header keeps contract name/kind readable,
+        #   while the anchor stays stable due to _anchor_id normalization.
         lines.append(f"### {c.name} ({c.kind})")
         lines.append(f"- file: `{c.file}`")
         lines.append(f"- receive(): {'✅' if c.has_receive else '❌'}")
@@ -128,6 +148,9 @@ def render_index_md(report: IndexReport) -> str:
     return "\n".join(lines)
 
 def render_index_md_from_dict(payload: dict) -> str:
+    # Dict-based renderer exists for CLI modes that operate on serialized payloads.
+    # This avoids reconstructing dataclasses and keeps the rendering boundary simple:
+    #   "payload in" -> "markdown out".
     lines: list[str] = []
     lines.append("# SCARLET Index Report")
     lines.append("")
@@ -236,6 +259,11 @@ def render_entrypoints_md_from_dict(payload: dict) -> str:
     lines.append("")
 
     def bucket(ep: dict) -> int:
+        # Bucketing is a UX prioritization:
+        #   - receive/fallback first: implicit ETH entrypoints
+        #   - payable next: value-flow surface
+        #   - nonpayable: typical mutating endpoints
+        #   - view/pure later: read-only helpers
         # 0: receive/fallback, 1: payable, 2: nonpayable/unknown, 3: view/pure, 4: other
         name = (ep.get("name") or "")
         mut = (ep.get("mutability") or "")
@@ -251,6 +279,8 @@ def render_entrypoints_md_from_dict(payload: dict) -> str:
 
     # Sort: file, contract, bucket, line
     entrypoints_sorted = sorted(
+        # Deterministic sorting makes output stable across runs and improves diff quality.
+        # This matters when SCARLET reports are committed to repos or attached to issues.
         entrypoints,
         key=lambda ep: (
             ep.get("file") or "",
@@ -272,6 +302,9 @@ def render_entrypoints_md_from_dict(payload: dict) -> str:
         if key != cur_key:
             cur_key = key
             aid = _anchor_id("entrypoints-contract", c_name)
+            # Grouping is by (file, contract, kind) rather than just contract name,
+            #   because large repos may contain identically named contracts in different paths.
+            # Anchor still uses name-only slug for readability; collisions are possible.
             lines.append(f'<a id="{aid}"></a>')
             lines.append(f"### {c_name} ({c_kind})")
             if fpath:
@@ -347,6 +380,8 @@ def render_sinks_md_from_dict(payload: dict) -> str:
 
     # Sort by file, contract, line
     sinks_sorted = sorted(
+        # Deterministic ordering helps compare "what changed" between two runs
+        # (e.g., after applying a mitigation diff).
         sinks,
         key=lambda s: (
             s.get("file") or "",
