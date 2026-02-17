@@ -1,4 +1,11 @@
-# 🔴 SCARLET
+<h1 align='center'>SCARLET</h1>
+
+<p align="center">
+ <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-installation'>Installation</a> . <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-basic-usage'>Usage</a> . <a href='https://github.com/Kode-n-Rolla/scarlet/edit/main/README.md#-roadmap'>Roadmap</a>
+</p>
+
+---
+
 <b>S</b>olidity <b>C</b>ontract <b>A</b>nalyzer & <b>R</b>esearch <b>L</b>ayer for <b>E</b>xecution & <b>T</b>ransfer
 
 A CLI-based Web3 audit assistant designed for structural reconnaissance of Solidity protocols.
