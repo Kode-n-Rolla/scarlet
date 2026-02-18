@@ -31,7 +31,7 @@ from .indexer import FunctionInfo, EntrypointInfo, SinkInfo
 from .scope import resolve_scope, subtract_out_of_scope
 from .solc_ast import parse_ast
 from .indexer import build_index, to_dict
-from .report.md import render_index_md_from_dict, render_entrypoints_md_from_dict, render_sinks_md_from_dict #,render_index_md
+from .report.md import render_index_md_from_dict, render_entrypoints_md_from_dict, render_sinks_md_from_dict
 from .analyzers.entrypoints import collect_entrypoints
 from .analyzers.sinks import collect_sinks
 
