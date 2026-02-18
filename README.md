@@ -58,7 +58,7 @@ CLI
 - Slither (optional, fallback indexer)
 
 ### Install solc (recommended via solc-select)
-```
+```bash
 solc-select install 0.8.24
 solc-select use 0.8.24
 solc --version
@@ -66,7 +66,7 @@ solc --version
 ---
 
 ### Local Installation
-```
+```bash
 git clone https://github.com/Kode-n-Rolla/scarlet.git
 cd scarlet
 
@@ -85,10 +85,10 @@ scarlet --help
 </p>
 
 <h2 id='usage'>🧠 Basic Usage</h2>
-`scarlet --scope <path>`
+<code>scarlet --scope &lt;path></code>
 
 ### Examples
-```
+```bash
 scarlet --scope scope.txt --out-of-scope out-of-scope.txt
 scarlet --scope scope.txt --inlcude-libraries
 scarlet --scope scope.txt --entrypoints
