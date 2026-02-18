@@ -1,6 +1,6 @@
 <h1 align='center'>SCARLET v0.1.0</h1>
 <p align="center">
- <a href='#installation'>Installation</a> • <a href='https://github.com/Kode-n-Rolla/scarlet/blob/main/README.md#-basic-usage'>Usage</a> • <a href='https://github.com/Kode-n-Rolla/scarlet/blob/main/README.md#-roadmap'>Roadmap</a>
+ <a href='#installation'>Installation</a> • <a href='#usage'>Usage</a> • <a href='#roadmap'>Roadmap</a>
 </p>
 
 <p align="center">
@@ -84,7 +84,7 @@ scarlet --help
   <img src="assets/scarlet-h.png" width="1000">
 </p>
 
-## 🧠 Basic Usage
+<h2 id='usage'>🧠 Basic Usage</h2>
 `scarlet --scope <path>`
 
 ### Examples
@@ -304,7 +304,7 @@ SCARLET is a <b>structural reconnaissance tool</b>.
 
 It reduces cognitive load during early-stage protocol review.
 
-## 🛣 Roadmap
+<h2 id='roadmap'>🛣 Roadmap</h2>
 
 ### 🔹 Phase 1 — Stabilization
 - Improve heuristic coverage
