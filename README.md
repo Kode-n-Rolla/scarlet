@@ -37,7 +37,7 @@ It helps auditors quickly map:
 - value transfer paths
 - external dependency influence
 
-SCARLET optimizes for audit velocity, not automated vulnerability detection.
+> SCARLET optimizes for audit velocity, **not automated vulnerability detection**.
 
 ## 🎯 Why this tool
 
