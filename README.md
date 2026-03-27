@@ -39,13 +39,19 @@ It helps auditors quickly map:
 
 SCARLET optimizes for audit velocity, not automated vulnerability detection.
 
-## 🎯 Intended Audience
+## 🎯 Why this tool
 
+Designed for:
 - Smart contract auditors
 - Security researchers
 - Web3 protocol reviewers
 - Bug bounty hunters
 - Solidity engineers performing internal reviews
+
+Focus:
+- Entrypoint analysis
+- Sink detection
+- Call flow understanding
 
 ## 📦 Architecture
 <b>Tech Stack</b>
