@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Analysis-Static-orange">
   <img src="https://img.shields.io/badge/Interface-CLI-black">
   <img src="https://img.shields.io/badge/Solidity-Analyzer-363636">
-  <img src="https://img.shields.io/badge/Usecase-Smart%20Contract%20Audit-critical">
+<!--  <img src="https://img.shields.io/badge/Usecase-Smart%20Contract%20Audit-critical"> -->
   <img src="https://img.shields.io/badge/Status-Active-success">
   <img src="https://img.shields.io/badge/License-MIT-green">
 </p>
