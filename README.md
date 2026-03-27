@@ -53,6 +53,19 @@ Focus:
 - Sink detection
 - Call flow understanding
 
+## 🛡️ Security Approach
+
+This tool is built with a security-first mindset:
+- Focus on external call surfaces
+- Identify trust boundaries
+- Highlight potential invariant break points
+
+### Audit Use Cases
+
+- Pre-audit reconnaissance
+- Contest triage
+- Attack surface mapping
+
 ## 📦 Architecture
 <b>Tech Stack</b>
 - Python 3.11
