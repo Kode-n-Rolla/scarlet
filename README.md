@@ -1,4 +1,5 @@
 <h1 align='center'>SCARLET v0.1.0</h1>
+
 <p align="center">
  <a href='#installation'>Installation</a> • <a href='#usage'>Usage</a> • <a href='#roadmap'>Roadmap</a>
 </p>
@@ -7,6 +8,22 @@
   <img src="assets/scarlet-logo.png" width="800">
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11-blue">
+  <img src="https://img.shields.io/badge/Web3-Security-purple">
+  <img src="https://img.shields.io/badge/Analysis-Static-orange">
+  <img src="https://img.shields.io/badge/Interface-CLI-black">
+  <img src="https://img.shields.io/badge/Solidity-Analyzer-363636">
+  <img src="https://img.shields.io/badge/Usecase-Smart%20Contract%20Audit-critical">
+  <img src="https://img.shields.io/badge/Status-Active-success">
+  <img src="https://img.shields.io/badge/License-MIT-green">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/v/release/Kode-n-Rolla/scarlet">
+  <img src="https://img.shields.io/github/last-commit/Kode-n-Rolla/scarlet">
+  <img src="https://img.shields.io/github/issues/Kode-n-Rolla/scarlet">
+</p>
 
 ---
 
